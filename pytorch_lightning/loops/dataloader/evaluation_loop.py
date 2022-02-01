@@ -274,16 +274,38 @@ class EvaluationLoop(DataLoaderLoop):
         self.trainer.logger_connector.on_epoch_end()
 
     def _print_results(self, results: List[_OUT_DICT], stage: RunningStage) -> None:
-        # TODO: this could be updated to look nicer
-        from pprint import pprint
 
-        print("-" * 80)
-        for i, metrics_dict in enumerate(results):
-            print(f"DATALOADER:{i} {stage.upper()} RESULTS")
-            pprint(
-                {
-                    k: (v.item() if v.numel() == 1 else v.tolist()) if isinstance(v, torch.Tensor) else v
-                    for k, v in metrics_dict.items()
-                }
-            )
-            print("-" * 80)
+	from pytorch_lightning.utilities.imports import _RICH_AVAILABLE
+
+	if _RICH_AVAILABLE:
+		from rich.console import Console
+        	from rich.table import Table
+        	from rich import box
+        
+        	myConsole = Console()
+        	myConsole.rule(f"[bold turquoise4]{stage.upper()} RESULTS")
+        
+        	myTable = Table(title=f"DATALOADER:{i} {stage.upper()} RESULTS",title_style="turquoise4",box=box.MINIMAL_DOUBLE_HEAD)
+        	myTable.add_column("Metric",style="turquoise4")
+        	myTable.add_column("Value",style="turquoise4")
+        
+        	for i, metrics_dict in enumerate(results):
+            		for k, v in metrics_dict.items():
+                		v = (v.item() if v.numel() == 1 else v.tolist()) if isinstance(v, torch.Tensor) else v
+                		myTable.add_row("test_loss", str(i[0]), style="purple4")
+                		myTable.add_row("test_acc: ", str(i[1]), style="dark_green")
+            		myConsole.print(table)
+	else:
+        	# TODO: this could be updated to look nicer
+        	from pprint import pprint
+
+        	print("-" * 80)
+        	for i, metrics_dict in enumerate(results):
+            	print(f"DATALOADER:{i} {stage.upper()} RESULTS")
+            	pprint(
+                	{
+                    	k: (v.item() if v.numel() == 1 else v.tolist()) if isinstance(v, torch.Tensor) else v
+                    	for k, v in metrics_dict.items()
+                	}
+            	)
+            	print("-" * 80)
